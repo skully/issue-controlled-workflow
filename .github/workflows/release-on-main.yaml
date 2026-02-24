@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy-test:
-    uses: ./.github/workflows/deploy-reusable.yml
+    uses: ./.github/workflows/deploy-reusable.yaml
     with:
       environment: test
       sha: ${{ github.sha }}
