@@ -20,10 +20,10 @@ jobs:
       - name: Create Release Issue
         uses: actions/github-script@v7
         with:
-            script: |
-      const sha = context.sha
+          script: |
+            const sha = context.sha
 
-      const body = `
+            const body = `
 ## 🚀 Release ${sha}
 
 Commit: \`${sha}\`
@@ -35,13 +35,13 @@ Commit: \`${sha}\`
 - 🚫 PROD
 `
 
-      await github.rest.issues.create({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        title: `Release ${sha}`,
-        body: body,
-        labels: [
-          "release",
-          `sha:${sha}`
-        ]
-      })
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Release ${sha}`,
+              body: body,
+              labels: [
+                "release",
+                `sha:${sha}`
+              ]
+            })
