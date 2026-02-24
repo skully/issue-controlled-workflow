@@ -30,7 +30,7 @@ jobs:
             const body = [
             `## 🚀 Release ${sha}`,
             ``,
-            `Commit: \${sha}\`,
+            `Commit: \`${sha}\``,
             ``,
             `### Promotion`,
             ``,
