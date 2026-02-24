@@ -9,9 +9,6 @@ on:
 
 jobs:
   deploy-test:
-    permissions:
-      contents: read
-      issues: write
     uses: ./.github/workflows/deploy-reusable.yaml
     with:
       environment: test
@@ -20,7 +17,9 @@ jobs:
   create-issue:
     needs: deploy-test
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Create Release Issue
         uses: actions/github-script@v7
