@@ -34,9 +34,9 @@ jobs:
             ``,
             `### Promotion`,
             ``,
-            `✅ TEST (automatically deployed)`,
+            `- ✅ TEST (automatically deployed)`,
             `- [ ] 🔁 STAGE`,
-            `🚫 PROD`
+            `- 🚫 PROD`
             ].join("\n");
 
             await github.rest.issues.create({
