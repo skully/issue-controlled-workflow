@@ -95,7 +95,9 @@ jobs:
       sha: ${{ needs.prepare.outputs.sha }}
 
   done:
-    needs: deploy
+    needs:
+      - prepare
+      - deploy
     runs-on: ubuntu-latest
 
     steps:
