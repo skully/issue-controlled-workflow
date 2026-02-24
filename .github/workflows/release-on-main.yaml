@@ -30,9 +30,9 @@ Commit: \`${sha}\`
 
 ### Promotion
 
-- ✅ TEST (automatically deployed)
-- [ ] 🔁 STAGE
-- 🚫 PROD
+ ✅ TEST (automatically deployed)
+ [ ] 🔁 STAGE
+ 🚫 PROD
 `
 
             await github.rest.issues.create({
