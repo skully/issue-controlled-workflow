@@ -31,7 +31,7 @@ Commit: \`${sha}\`
 ### Promotion
 
  ✅ TEST (automatically deployed)
- [ ] 🔁 STAGE
+- [ ] 🔁 STAGE
  🚫 PROD
 `
 
