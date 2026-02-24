@@ -23,21 +23,24 @@ jobs:
 
       - name: Detect promotion checkbox
         id: detect
-        run: |
-          BODY="${{ github.event.issue.body }}"
-          
-          LINE=$(echo "$BODY" | grep "^- \[x\] " | head -n1)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body
+      
+            const line = body
+              .split("\n")
+              .find(l => l.startsWith("- [x] "))
 
-          if [ -z "$LINE" ]; then
-            echo "No promotion requested"
-            exit 0
-          fi
+            if (!line) {
+              core.setOutput("skip", "true")
+              return
+            }
 
-          ENV=$(echo "$LINE" | cut -d']' -f2 | xargs)
+            const env = line.replace("- [x] ", "").trim().toLowerCase()
 
-          ENV_LOWER=$(echo "$ENV" | tr '[:upper:]' '[:lower:]')
-
-          echo "env=$ENV_LOWER" >> $GITHUB_OUTPUT
+            core.setOutput("env", env)
+            core.setOutput("skip", "false")
 
 
       - name: Mark Deploying
@@ -53,7 +56,7 @@ jobs:
             const regex = new RegExp(`- \\[x\\] .*${upper}`)
             body = body.replace(
               regex,
-              `🔁 ${upper}`
+              `- 🔁 ${upper}`
             )
 
             await github.rest.issues.update({
@@ -64,7 +67,7 @@ jobs:
             })
 
       - name: Deploy via reusable workflow
-        uses: ./.github/workflows/deploy-reusable.yml
+        uses: ./.github/workflows/deploy-reusable.yaml
         with:
           environment: ${{ steps.detect.outputs.env }}
           sha: ${{ steps.sha.outputs.sha }}
@@ -74,14 +77,19 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const issue = context.payload.issue
             const env = "${{ steps.detect.outputs.env }}"
             const upper = env.toUpperCase()
+
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            })
 
             let lines = issue.body.split("\n")
 
             const index = lines.findIndex(line =>
-              line.trim().startsWith(`🔁 ${upper}`)
+              line.trim().startsWith(`- 🔁 ${upper}`)
             )
 
             if (index === -1) {
@@ -89,22 +97,20 @@ jobs:
               return
             }
 
-            lines[index] = `✅ ${upper}`
+            lines[index] = `- ✅ ${upper}`
 
             if (lines[index + 1]) {
               const nextLine = lines[index + 1].trim()
 
-              if (nextLine.startsWith("🚫 ")) {
-                const nextEnv = nextLine.replace("🚫 ", "").trim()
+              if (nextLine.startsWith("- 🚫 ")) {
+                const nextEnv = nextLine.replace("- 🚫 ", "").trim()
                 lines[index + 1] = `- [ ] ${nextEnv}`
               }
             }
 
-            const newBody = lines.join("\n")
-
             await github.rest.issues.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: issue.number,
-              body: newBody
+              issue_number: context.issue.number,
+              body: lines.join("\n")
             })
