@@ -9,7 +9,7 @@ permissions:
   issues: write
 
 jobs:
-  promote:
+  prepare:
     if: contains(github.event.issue.labels.*.name, 'release')
     runs-on: ubuntu-latest
 
@@ -66,51 +66,56 @@ jobs:
               body: body
             })
 
-      - name: Deploy via reusable workflow
+      deploy:
+        needs: prepare
         uses: ./.github/workflows/deploy-reusable.yaml
         with:
-          environment: ${{ steps.detect.outputs.env }}
-          sha: ${{ steps.sha.outputs.sha }}
+          environment: ${{ needs.promote.outputs.env }}
+          sha: ${{ needs.promote.outputs.sha }}
+          
+      done:
+        needs: deploy
+        runs-on: ubuntu-latest
+        steps:
+        - name: Mark Done
+          if: success()
+          uses: actions/github-script@v7
+          with:
+            script: |
+              const env = "${{ steps.detect.outputs.env }}"
+              const upper = env.toUpperCase()
 
-      - name: Mark Done
-        if: success()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const env = "${{ steps.detect.outputs.env }}"
-            const upper = env.toUpperCase()
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number
+              })
 
-            const { data: issue } = await github.rest.issues.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number
-            })
+              let lines = issue.body.split("\n")
 
-            let lines = issue.body.split("\n")
+              const index = lines.findIndex(line =>
+                line.trim().startsWith(`- 🔁 ${upper}`)
+              )
 
-            const index = lines.findIndex(line =>
-              line.trim().startsWith(`- 🔁 ${upper}`)
-            )
-
-            if (index === -1) {
-              core.info("Deploying line not found")
-              return
-            }
-
-            lines[index] = `- ✅ ${upper}`
-
-            if (lines[index + 1]) {
-              const nextLine = lines[index + 1].trim()
-
-              if (nextLine.startsWith("- 🚫 ")) {
-                const nextEnv = nextLine.replace("- 🚫 ", "").trim()
-                lines[index + 1] = `- [ ] ${nextEnv}`
+              if (index === -1) {
+                core.info("Deploying line not found")
+                return
               }
-            }
+  
+              lines[index] = `- ✅ ${upper}`
+  
+              if (lines[index + 1]) {
+                const nextLine = lines[index + 1].trim()
+  
+                if (nextLine.startsWith("- 🚫 ")) {
+                  const nextEnv = nextLine.replace("- 🚫 ", "").trim()
+                  lines[index + 1] = `- [ ] ${nextEnv}`
+                }
+              }
 
-            await github.rest.issues.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: lines.join("\n")
-            })
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: lines.join("\n")
+              })
