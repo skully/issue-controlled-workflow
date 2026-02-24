@@ -30,12 +30,12 @@ jobs:
             const body = [
             `## 🚀 Release ${sha}`,
             ``,
-            `Commit: \`${sha}\``,
+            `Commit: \${sha}\`,
             ``,
             `### Promotion`,
             ``,
             `- ✅ TEST (automatically deployed)`,
-            `- [ ] 🔁 STAGE`,
+            `- [ ] STAGE`,
             `- 🚫 PROD`
             ].join("\n");
 
